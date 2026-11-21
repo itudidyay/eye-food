@@ -102,22 +102,14 @@ export function scoreRecipe(recipe, inventory) {
 }
 
 /**
- * Score every recipe, drop the ones with zero matching ingredients,
- * and sort from best to worst.
+ * Score every recipe that uses at least one thing you have, best first.
+ * Recipes that also need shopping are included; their missing items are listed on the result.
  */
 export function getRecommendations(recipes, inventory) {
   return recipes
     .map((recipe) => scoreRecipe(recipe, inventory))
     .filter((result) => result.available.length > 0)
     .sort((a, b) => b.finalScore - a.finalScore)
-}
-
-/** Ways the Discover page can sort results. */
-export const SORT_OPTIONS = {
-  score: { label: 'Best recommendation', compare: (a, b) => b.finalScore - a.finalScore },
-  urgency: { label: 'Expiration urgency', compare: (a, b) => b.urgencyScore - a.urgencyScore || b.finalScore - a.finalScore },
-  match: { label: 'Ingredient match %', compare: (a, b) => b.matchRatio - a.matchRatio || b.finalScore - a.finalScore },
-  time: { label: 'Quickest to cook', compare: (a, b) => a.recipe.cookingTime - b.recipe.cookingTime },
 }
 
 // ---------- "Mark as Cooked" helpers ----------
@@ -146,4 +138,20 @@ function normalizeUnit(unit = '') {
 export function suggestDeduction(ingredient, item) {
   if (normalizeUnit(ingredient.unit) !== normalizeUnit(item.unit)) return 0
   return Math.min(ingredient.amount, item.quantity)
+}
+
+/**
+ * A copy of a scored recipe with every amount multiplied by `scale`
+ * (for example 2 when cooking double servings). Used by the recipe views and cost maths.
+ */
+export function scaleResult(result, scale) {
+  const scaleIngredient = (ingredient) => ({
+    ...ingredient,
+    amount: Math.round(ingredient.amount * scale * 100) / 100,
+  })
+  return {
+    ...result,
+    available: result.available.map((match) => ({ ...match, ingredient: scaleIngredient(match.ingredient) })),
+    missing: result.missing.map(scaleIngredient),
+  }
 }

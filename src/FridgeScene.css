@@ -1,0 +1,1036 @@
+/* =========================================================
+   Fridge scene: the Search tab, full screen.
+   1. Scene and navigation  2. The fridge  3. Whiteboard
+   4. Inside the fridge  5. Result cards  6. Animation  7. Responsive
+   ========================================================= */
+
+/* ---------- 1. Scene and navigation ---------- */
+
+.scene {
+  --fh: min(80vh, 150vw); /* fridge height */
+  --fw: calc(var(--fh) * 0.47); /* fridge width */
+  --fd: calc(var(--fh) * 0.2); /* fridge depth */
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  overflow: clip; /* clip, not hidden: the scene must never scroll */
+  perspective: 1500px;
+  perspective-origin: 50% 42%;
+  /* Kitchen wall, lit from the upper left. */
+  background: radial-gradient(ellipse at 35% 25%, #f3a087 0%, #e98a6e 45%, #d9755b 100%);
+}
+
+.floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 16vh;
+  background: linear-gradient(180deg, #c96a52 0%, #d67b62 18%, #e28c72 100%);
+  box-shadow: inset 0 3px 0 rgba(120, 50, 35, 0.35), inset 0 30px 40px rgba(120, 50, 35, 0.18);
+}
+
+.camera {
+  position: absolute;
+  inset: 0;
+  /* The fridge is angled, so half of it sits behind this layer in 3D.
+     Without this the layer swallows clicks meant for the doors and whiteboard. */
+  pointer-events: none;
+  transform-style: preserve-3d;
+  transform-origin: 50% 60%;
+  transition: transform 1.3s cubic-bezier(0.5, 0, 0.2, 1);
+}
+
+/* ---------- 1b. Name sign on the wall, right of the fridge ---------- */
+
+/* Sized from its own width (cqw), so it shrinks to fit whatever wall is left beside the fridge. */
+.wall-sign {
+  position: absolute;
+  left: calc(50% + var(--fw) * 0.95);
+  bottom: calc(10vh + var(--fh) * 0.56);
+  width: min(calc(var(--fh) * 0.4), calc(50vw - var(--fw) * 0.95 - 16px));
+  container-type: inline-size;
+  /* On the wall, behind the cabinet. */
+  transform: translateZ(calc(var(--fd) * -1.5));
+}
+
+.wall-sign-board {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3cqw;
+  padding: 8cqw 5cqw 6cqw;
+  border: 1.6cqw solid #fbfaf5;
+  border-radius: 2cqw;
+  background: linear-gradient(170deg, #fffaf1 0%, #fbe9db 100%);
+  box-shadow: 0 2.5cqw 4cqw rgba(74, 28, 18, 0.35), inset 0 0 5cqw rgba(120, 50, 35, 0.08);
+  /* Hangs a little crooked from its nail. */
+  transform: rotate(2deg);
+  transform-origin: 50% -11cqw;
+}
+
+/* String running up to the nail */
+.wall-sign-board::before {
+  content: "";
+  position: absolute;
+  top: -16cqw;
+  left: 50%;
+  width: 30cqw;
+  height: 30cqw;
+  margin-left: -15cqw;
+  border-top: 0.7cqw solid #7a4a3a;
+  border-left: 0.7cqw solid #7a4a3a;
+  transform: scaleY(0.5) rotate(45deg);
+}
+
+/* Nail */
+.wall-sign-board::after {
+  content: "";
+  position: absolute;
+  top: -13.5cqw;
+  left: 50%;
+  width: 3.6cqw;
+  height: 3.6cqw;
+  margin-left: -1.8cqw;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f4efe9, #8d8189 70%);
+  box-shadow: 0 0.8cqw 1cqw rgba(74, 28, 18, 0.45);
+}
+
+.wall-sign-eye {
+  display: grid;
+  place-items: center;
+  width: 36cqw;
+  height: 19cqw;
+  overflow: hidden;
+  border: 1.4cqw solid #1d2a44;
+  border-radius: 50%;
+  background: #ffffff;
+  animation: sign-blink 6s ease-in-out infinite;
+}
+
+/* Iris in the fridge's lavender, with a pupil and a glint */
+.wall-sign-eye span {
+  width: 15cqw;
+  height: 15cqw;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, #ffffff 0 9%, transparent 10%),
+    radial-gradient(circle, #1d2a44 0 34%, #8a80a6 36% 100%);
+}
+
+.wall-sign-name {
+  color: #1d2a44;
+  font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  font-size: 13cqw;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.wall-sign-name b {
+  color: #c93a2b;
+}
+
+@keyframes sign-blink {
+  0%,
+  94%,
+  100% {
+    transform: none;
+  }
+  97% {
+    transform: scaleY(0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wall-sign-eye {
+    animation: none;
+  }
+}
+
+/* ---------- 2. The fridge ---------- */
+
+/* Soft shadow on the floor, pooled under the fridge and trailing to the right. */
+.fridge-shadow {
+  position: absolute;
+  left: calc(50% - var(--fw) * 0.55);
+  bottom: 7.4vh;
+  width: calc(var(--fw) * 2.3);
+  height: 4.6vh;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 30% 50%, rgba(74, 28, 18, 0.62) 0%, rgba(74, 28, 18, 0.3) 45%, rgba(74, 28, 18, 0) 72%);
+  filter: blur(6px);
+  /* Sits behind the cabinet so it never paints over the doors. */
+  transform: translateZ(calc(var(--fd) * -1.2));
+}
+
+.fridge3d {
+  position: absolute;
+  left: calc(50% - var(--fw) / 2);
+  bottom: 10vh;
+  width: var(--fw);
+  height: var(--fh);
+  pointer-events: auto;
+  transform-style: preserve-3d;
+  transform: rotateY(-9deg);
+}
+
+/* Brushed metal: lavender at the top fading to warm pink. */
+.metal {
+  border-radius: 10px;
+  box-shadow:
+    inset -3px 0 0 rgba(255, 255, 255, 0.6),
+    inset 3px 0 5px rgba(70, 55, 100, 0.25),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -4px 8px rgba(90, 50, 70, 0.22);
+}
+
+.metal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(104deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 28%, rgba(255, 255, 255, 0) 62%, rgba(255, 255, 255, 0.22) 100%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, rgba(0, 0, 0, 0.015) 1px 3px);
+}
+
+.f-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: #6d6685;
+}
+
+/* The lit compartment behind the lower door. */
+.f-cavity {
+  position: absolute;
+  left: 3%;
+  right: 3%;
+  top: 33.5%;
+  bottom: 2%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  border-radius: 6px;
+  background: radial-gradient(ellipse at 50% 0%, #ffffff 0%, #e9f1f3 45%, #b9c7cc 100%);
+  box-shadow:
+    inset 0 0 30px rgba(40, 60, 70, 0.45),
+    inset 14px 0 18px rgba(40, 60, 70, 0.25),
+    inset -14px 0 18px rgba(40, 60, 70, 0.25);
+}
+
+/* A shelf in the compartment, with a few items glimpsed as the door opens. */
+.f-shelf {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: flex-end;
+  margin: 0 4%;
+  border-bottom: 5px solid #c3d0d5;
+  box-shadow: 0 7px 8px -4px rgba(40, 60, 70, 0.4);
+  font-size: calc(var(--fh) * 0.075);
+  line-height: 1.05;
+}
+
+.f-shelf span {
+  filter: drop-shadow(0 3px 2px rgba(30, 45, 55, 0.35));
+}
+
+/* The right side of the cabinet, in shade. */
+.f-side {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: var(--fd);
+  height: 100%;
+  transform: rotateY(90deg);
+  transform-origin: left center;
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(90deg, #8a80a6 0%, #7a7193 40%, #9a7f8f 100%);
+  box-shadow: inset 6px 0 10px rgba(40, 30, 60, 0.35);
+}
+
+.f-door-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 31.5%;
+  background: linear-gradient(180deg, #b1a9cf 0%, #c0b4d3 100%);
+}
+
+.f-door {
+  position: absolute;
+  top: 32.3%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  transition: transform 1.2s cubic-bezier(0.55, 0, 0.2, 1);
+}
+
+.door-open .f-door {
+  transform: rotateY(-118deg);
+}
+
+.f-door-front,
+.f-door-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+.f-door-front {
+  background: linear-gradient(180deg, #c2b6d3 0%, #d6c0cc 55%, #e8c6c0 100%);
+}
+
+/* Both doors lead to the Pantry. */
+.phase-front .f-door-top,
+.phase-front .f-door-front {
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+.phase-front .f-door-top:hover,
+.phase-front .f-door-front:hover {
+  filter: brightness(1.04);
+}
+
+/* The inner liner of the door, with its bins. */
+.f-door-back {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  padding: 8% 10%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #dfe6e8, #f6f9fa 50%, #d3dcdf);
+  box-shadow: inset 0 0 0 6px #c6d0d4, inset 0 0 24px rgba(40, 60, 70, 0.3);
+  transform: rotateY(180deg);
+  pointer-events: none;
+}
+
+.f-door-back span {
+  height: 13%;
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(190, 205, 210, 0.9));
+  box-shadow: 0 5px 8px rgba(40, 60, 70, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.8);
+}
+
+.f-handle {
+  position: absolute;
+  right: 7%;
+  width: 3.4%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #fbf6ee 0%, #d9c8b4 45%, #9d8f88 100%);
+  box-shadow: -5px 4px 7px rgba(60, 40, 70, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.f-door-top .f-handle {
+  top: 38%;
+  height: 44%;
+}
+
+.f-door-front .f-handle {
+  top: 5%;
+  height: 22%;
+}
+
+/* ---------- 3. Whiteboard (the search box) ---------- */
+.whiteboard {
+  position: absolute;
+  left: 11%;
+  top: 34%;
+  width: 70%;
+  height: 24%;
+  display: flex;
+  align-items: center;
+  padding: 0 3%;
+  border: 5px solid #cdd2d6;
+  border-radius: 6px;
+  background: linear-gradient(170deg, #ffffff 0%, #f3f5f4 100%);
+  box-shadow:
+    0 8px 12px rgba(60, 35, 60, 0.38),
+    inset 0 0 14px rgba(0, 0, 0, 0.07),
+    inset 0 1px 0 #ffffff;
+}
+
+/* Marker tray */
+.whiteboard::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -11px;
+  height: 7px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(180deg, #d9dde0, #a9afb4);
+  box-shadow: 0 4px 5px rgba(60, 35, 60, 0.35);
+}
+
+/* Magnet */
+.whiteboard::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff8d7a, #c93a2b 70%);
+  box-shadow: 0 3px 4px rgba(60, 35, 60, 0.45);
+}
+
+/* One marker font for the prompt and for what the user writes. */
+.whiteboard input,
+.whiteboard input::placeholder {
+  font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  font-size: clamp(12px, 1.9vh, 18px);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.whiteboard input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #1d2a44;
+  text-align: center;
+}
+
+/* No focus box on the board: the caret and the vanishing prompt show focus. */
+.whiteboard input,
+.whiteboard input:focus,
+.whiteboard input:focus-visible {
+  outline: none;
+}
+
+/* Browser autofill would restyle the field with its own font and colours. */
+.whiteboard input:-webkit-autofill,
+.whiteboard input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #1d2a44;
+  transition: background-color 9999s ease-out;
+}
+
+.whiteboard {
+  cursor: text;
+}
+
+.whiteboard input::placeholder {
+  color: #9aa3ad;
+  transition: color 0.15s ease;
+}
+
+.whiteboard input:focus::placeholder {
+  color: transparent;
+}
+
+/* ---------- 3b. Map pinned to the freezer door (opens Stores) ---------- */
+.door-map {
+  position: absolute;
+  left: 13%;
+  top: 17%;
+  width: 54%;
+  height: 64%;
+  padding: 0;
+  border: 4px solid #fbfaf5;
+  border-radius: 3px;
+  cursor: pointer;
+  /* A paper street map: parks, a river, and a grid of roads. */
+  background:
+    linear-gradient(115deg, transparent 0 46%, #a9d3ea 46% 54%, transparent 54%),
+    radial-gradient(ellipse at 22% 72%, #bfdcae 0 22%, transparent 23%),
+    radial-gradient(ellipse at 80% 24%, #bfdcae 0 17%, transparent 18%),
+    repeating-linear-gradient(0deg, transparent 0 21%, #ffffff 21% 24%),
+    repeating-linear-gradient(90deg, transparent 0 17%, #ffffff 17% 20%),
+    linear-gradient(28deg, transparent 0 60%, #f6d98b 60% 64%, transparent 64%),
+    #ebe6da;
+  box-shadow: 0 6px 10px rgba(60, 35, 60, 0.38);
+  transform: rotate(-3deg);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.door-map:hover,
+.door-map:focus-visible {
+  transform: rotate(-3deg) scale(1.05);
+  box-shadow: 0 10px 16px rgba(60, 35, 60, 0.42);
+}
+
+/* Tape holding the map to the door */
+.door-map::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 34%;
+  height: 12px;
+  margin-left: -17%;
+  background: rgba(255, 244, 200, 0.85);
+  box-shadow: 0 2px 3px rgba(60, 35, 60, 0.25);
+  transform: rotate(2deg);
+}
+
+/* Location pin */
+.door-map-pin {
+  position: absolute;
+  left: 56%;
+  top: 30%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50% 50% 50% 0;
+  background: radial-gradient(circle at 50% 45%, #ffffff 0 22%, #e2452f 24%);
+  box-shadow: -2px 3px 3px rgba(60, 35, 60, 0.4);
+  transform: rotate(-45deg);
+}
+
+/* ---------- 4. Inside the fridge ---------- */
+.scene-dark {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: #07090a;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.55s ease;
+}
+
+.phase-dark .scene-dark,
+.phase-closing .scene-dark {
+  opacity: 1;
+}
+
+.interior {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  /* Stays visible under the dark screen while closing, then disappears. */
+  transition: opacity 0s linear 0.55s;
+}
+
+.phase-interior .interior,
+.phase-open .interior {
+  opacity: 1;
+  transition: none;
+}
+
+.interior-inner {
+  position: absolute;
+  inset: 0;
+  /* Back wall */
+  background: radial-gradient(ellipse at 50% 0%, #ffffff 0%, #eef4f6 30%, #cfdadf 70%, #b3c1c7 100%);
+  transition: filter 0.6s ease;
+}
+
+/* The shelves fall back a little so the cards read clearly. */
+.show-results .interior-inner {
+  filter: brightness(0.62) saturate(0.9) blur(1.5px);
+}
+
+.interior-wall {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 9%;
+}
+
+.interior-wall-left {
+  left: 0;
+  background: linear-gradient(90deg, #a9b7bd, #dfe7ea);
+  clip-path: polygon(0 0, 100% 7%, 100% 93%, 0 100%);
+}
+
+.interior-wall-right {
+  right: 0;
+  background: linear-gradient(270deg, #a9b7bd, #dfe7ea);
+  clip-path: polygon(100% 0, 0 7%, 0 93%, 100% 100%);
+}
+
+.interior-ceiling {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 7%;
+  background: linear-gradient(180deg, #c3cfd4, #e9eff1);
+  clip-path: polygon(0 0, 100% 0, 91% 100%, 9% 100%);
+}
+
+.interior-lamp {
+  position: absolute;
+  top: 2%;
+  left: 38%;
+  right: 38%;
+  height: 2.4%;
+  border-radius: 99px;
+  background: #ffffff;
+  box-shadow: 0 0 40px 18px rgba(255, 255, 255, 0.95), 0 0 140px 70px rgba(255, 252, 235, 0.55);
+}
+
+.interior-shelves {
+  position: absolute;
+  top: 9%;
+  bottom: 19%;
+  left: 9%;
+  right: 9%;
+  display: flex;
+  flex-direction: column;
+}
+
+.glass-shelf {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 0;
+}
+
+.shelf-items {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 0 4%;
+}
+
+.food {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: default;
+}
+
+.food-icon {
+  /* Shrinks as shelves are added, so a big pantry still fits. */
+  font-size: clamp(26px, calc(23vh / var(--shelves, 3)), 76px);
+  line-height: 1.1;
+  transition: transform 0.2s ease;
+  /* Contact shadow on the glass, plus a soft cast shadow. */
+  filter: drop-shadow(0 7px 3px rgba(30, 45, 55, 0.35)) drop-shadow(0 18px 14px rgba(30, 45, 55, 0.18));
+}
+
+.food-name {
+  max-width: 100%;
+  overflow: hidden;
+  color: #52626a;
+  font-size: 0.6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Days left, shown only on the Pantry tab. */
+.food-expiry {
+  display: none;
+  color: #6b7a82;
+  font-size: 0.625rem;
+  white-space: nowrap;
+}
+
+.food-expiry.expiry-urgent,
+.food-expiry.expiry-soon {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.food-expiry.expiry-expired {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+/* Glass shelf seen from slightly above: a pane receding to the back wall... */
+.shelf-surface {
+  height: 26px;
+  margin-top: -18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(214, 232, 238, 0.75));
+  clip-path: polygon(3.5% 0, 96.5% 0, 100% 100%, 0 100%);
+}
+
+/* ...with a thick polished front edge. */
+.shelf-edge {
+  height: 9px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #ffffff 0%, #d5e4e9 45%, #9fb3ba 100%);
+  box-shadow: 0 10px 14px rgba(30, 45, 55, 0.25), inset 0 1px 0 #ffffff;
+}
+
+.crisper {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  bottom: 2.5%;
+  height: 14.5%;
+  display: flex;
+  gap: 2%;
+}
+
+.crisper-drawer {
+  flex: 1;
+  border-radius: 8px 8px 12px 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(196, 214, 221, 0.65));
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.7),
+    inset 0 -18px 26px rgba(120, 150, 160, 0.35),
+    0 10px 16px rgba(30, 45, 55, 0.22);
+}
+
+.crisper-drawer::before {
+  content: "";
+  display: block;
+  width: 34%;
+  height: 8px;
+  margin: 12px auto 0;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #ffffff, #b7c7cd);
+  box-shadow: 0 3px 4px rgba(30, 45, 55, 0.25);
+}
+
+/* ---------- 5. Result cards over the open fridge ---------- */
+.results {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow-y: auto;
+  padding: 28px clamp(16px, 4vw, 56px) 40px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+
+.show-results .results {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.results-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 980px;
+  margin: 0 auto;
+  perspective: 1200px;
+}
+
+.results-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.results-search {
+  flex: 1;
+}
+
+.results-search input,
+.pill-button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--text);
+  font-size: 0.9375rem;
+  box-shadow: 0 10px 24px rgba(15, 25, 32, 0.28);
+}
+
+.results-search input {
+  width: 100%;
+  outline: none;
+}
+
+.pill-button {
+  white-space: nowrap;
+}
+
+.results .answer {
+  margin-top: 0;
+}
+
+.results .card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 30px 60px rgba(15, 25, 32, 0.4), 0 3px 8px rgba(15, 25, 32, 0.2);
+}
+
+/* A short line under the cards: other matches, or "nothing found". */
+.results-note {
+  align-self: center;
+  margin: 0;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 25, 32, 0.28);
+  font-size: 0.875rem;
+  line-height: 1.9;
+  text-align: center;
+}
+
+/* ---------- 5b. Pantry controls over the open fridge ---------- */
+.pantry-bar,
+.pantry-foot {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.pantry-bar {
+  top: 16px;
+  right: 16px;
+}
+
+.pantry-foot {
+  left: 50%;
+  bottom: 16px;
+  gap: 20px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 24px rgba(15, 25, 32, 0.2);
+  font-size: 0.875rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.show-pantry .pantry-bar,
+.show-pantry .pantry-foot {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pill-button.primary {
+  background: var(--text);
+  color: #ffffff;
+}
+
+/* On the Pantry tab the shelves are live: each item opens for editing. */
+.show-pantry .interior {
+  pointer-events: auto;
+}
+
+.show-pantry .food {
+  cursor: pointer;
+}
+
+.show-pantry .food:hover .food-icon,
+.show-pantry .food:focus-visible .food-icon {
+  transform: translateY(-6px) scale(1.08);
+}
+
+.show-pantry .food-expiry {
+  display: block;
+}
+
+/* ---------- 6. Animation ---------- */
+
+/* The camera pushes toward the compartment as the door swings. */
+.phase-opening .camera,
+.phase-dark .camera,
+.phase-interior .camera,
+.phase-open .camera {
+  transform: scale(1.9) translateY(-9%);
+  transition-delay: 0.3s;
+}
+
+/* First visit: the camera travels in and the fridge turns to face us. */
+.phase-entry .camera {
+  animation: camera-in 2.4s cubic-bezier(0.25, 0.7, 0.2, 1) both;
+}
+
+.phase-entry .fridge3d {
+  animation: fridge-turn 2.4s cubic-bezier(0.25, 0.7, 0.2, 1) both;
+}
+
+.phase-entry .whiteboard {
+  animation: board-in 0.5s ease 1.9s both;
+}
+
+/* The fridge light flickers on. */
+.phase-interior .interior-inner {
+  animation: light-on 0.9s ease both;
+}
+
+.show-results .results .card {
+  animation: card-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.show-results .results .card:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+@keyframes camera-in {
+  from {
+    transform: scale(0.3) translateY(4%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes fridge-turn {
+  from {
+    transform: rotateY(-34deg);
+  }
+  to {
+    transform: rotateY(-9deg);
+  }
+}
+
+@keyframes board-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes light-on {
+  0% {
+    filter: brightness(0.15);
+  }
+  35% {
+    filter: brightness(0.7);
+  }
+  50% {
+    filter: brightness(0.4);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: rotateX(14deg) translateY(40px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- 7. Responsive ---------- */
+@media (min-width: 761px) {
+  /* Keep the cards clear of the floating navigation. */
+  .results {
+    padding-left: 190px;
+  }
+}
+
+@media (max-width: 760px) {
+  .scene {
+    --fh: min(66vh, 150vw);
+  }
+
+  /* No wall to spare beside the fridge; the header already shows the name. */
+  .wall-sign {
+    display: none;
+  }
+
+  .results .answer {
+    grid-template-columns: 1fr;
+  }
+
+  .pantry-foot {
+    bottom: 68px;
+  }
+
+  .results {
+    padding-bottom: 96px;
+  }
+}
+
+/* ---------- 8. Search results grid ---------- */
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 18px;
+}
+
+.recipe-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: none;
+  border-radius: 16px;
+  background: #ffffff;
+  color: var(--text);
+  text-align: left;
+  box-shadow: 0 20px 40px rgba(15, 25, 32, 0.34), 0 3px 8px rgba(15, 25, 32, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recipe-tile:hover,
+.recipe-tile:focus-visible {
+  transform: translateY(-5px);
+  box-shadow: 0 28px 50px rgba(15, 25, 32, 0.4), 0 4px 10px rgba(15, 25, 32, 0.2);
+}
+
+.show-results .recipe-tile {
+  animation: card-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.recipe-tile .recipe-image {
+  aspect-ratio: 16 / 10;
+  font-size: 2.5rem;
+}
+
+.recipe-tile-name {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.recipe-tile-count {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.recipe-tile-count.is-ready {
+  color: #15803d;
+  font-weight: 600;
+}
+
+/* How much of the recipe is already in the fridge. */
+.recipe-tile-bar {
+  display: block;
+  height: 5px;
+  margin-top: auto;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e8ecee;
+}
+
+.recipe-tile-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #15803d;
+}
+
+.back-button {
+  align-self: flex-start;
+}
+
+@media (max-width: 760px) {
+  .recipe-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}

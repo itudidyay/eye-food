@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
 import Autocomplete from './Autocomplete.jsx'
 import UnitInput from './UnitInput.jsx'
 import { createId } from '../utils/storage.js'
@@ -14,7 +13,7 @@ const toSteps = (text) => text.split('\n').map((line) => line.trim()).filter(Boo
 
 // Form for a recipe the user writes themselves. Calls onSubmit with clean recipe data.
 export default function RecipeForm({ pantryNames = [], unitOptions = COMMON_UNITS, onSubmit, onCancel }) {
-  const [form, setForm] = useState({ name: '', description: '', cookingTime: 30, difficulty: 'Easy', instructions: '' })
+  const [form, setForm] = useState({ name: '', description: '', cookingTime: 30, servings: 4, difficulty: 'Easy', instructions: '' })
   const [ingredients, setIngredients] = useState(() => [blankIngredient()])
   const [errors, setErrors] = useState({})
 
@@ -34,6 +33,7 @@ export default function RecipeForm({ pantryNames = [], unitOptions = COMMON_UNIT
     const newErrors = {}
     if (!form.name.trim()) newErrors.name = 'Please give your recipe a name.'
     if (!(Number(form.cookingTime) > 0)) newErrors.cookingTime = 'Enter minutes greater than 0.'
+    if (!(Number(form.servings) > 0)) newErrors.servings = 'Enter a number of servings, 1 or more.'
     if (filled.length === 0) newErrors.ingredients = 'Add at least one ingredient.'
     else if (filled.some((ing) => !(Number(ing.amount) > 0))) {
       newErrors.ingredients = 'Every ingredient needs an amount greater than 0.'
@@ -54,6 +54,7 @@ export default function RecipeForm({ pantryNames = [], unitOptions = COMMON_UNIT
       name: form.name.trim(),
       description: form.description.trim() || 'A recipe I made myself.',
       cookingTime: Math.round(Number(form.cookingTime)),
+      servings: Math.round(Number(form.servings)),
       difficulty: form.difficulty,
       ingredients: filled.map((ing) => ({
         name: ing.name.trim(),
@@ -111,6 +112,18 @@ export default function RecipeForm({ pantryNames = [], unitOptions = COMMON_UNIT
             ))}
           </select>
         </div>
+        <div className="form-field">
+          <label htmlFor="recipe-servings">Servings</label>
+          <input
+            id="recipe-servings"
+            type="number"
+            min="1"
+            step="1"
+            value={form.servings}
+            onChange={(e) => setField('servings', e.target.value)}
+          />
+          {errors.servings && <p className="form-error">{errors.servings}</p>}
+        </div>
       </div>
 
       <fieldset className="form-field ingredient-editor">
@@ -146,12 +159,12 @@ export default function RecipeForm({ pantryNames = [], unitOptions = COMMON_UNIT
               onClick={() => removeIngredient(ing.rowId)}
               aria-label={`Remove ingredient ${index + 1}`}
             >
-              <Trash2 size={16} />
+              ×
             </button>
           </div>
         ))}
         <button type="button" className="button button-secondary add-row" onClick={() => setIngredients((l) => [...l, blankIngredient()])}>
-          <Plus size={16} /> Add another ingredient
+          Add ingredient
         </button>
         {errors.ingredients && <p className="form-error">{errors.ingredients}</p>}
       </fieldset>

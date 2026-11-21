@@ -6,8 +6,9 @@ import { dateFromToday, parseDate } from './expiration.js'
 const STORAGE_KEY = 'fridgewise.inventory.v1'
 const RECIPES_KEY = 'fridgewise.customRecipes.v1'
 
-export const LOCATIONS = ['fridge', 'freezer', 'pantry']
 export const DIFFICULTIES = ['Easy', 'Medium', 'Hard']
+// Recipes without a servings count (older saves, built-ins that don't set one) serve 4.
+export const DEFAULT_SERVINGS = 4
 
 /** Make a unique ID. crypto.randomUUID is not available everywhere, so we have a fallback. */
 export function createId() {
@@ -28,6 +29,7 @@ export function sanitizeIngredient(raw) {
   if (!name) return null
 
   const quantity = Number(raw.quantity)
+  const price = Number(raw.price)
 
   return {
     id: raw.id ?? createId(),
@@ -37,7 +39,8 @@ export function sanitizeIngredient(raw) {
     // Older saved items have no purchase date, so they default to today.
     dateAdded: parseDate(raw.dateAdded) ? raw.dateAdded : dateFromToday(0),
     expirationDate: typeof raw.expirationDate === 'string' ? raw.expirationDate : '',
-    location: LOCATIONS.includes(raw.location) ? raw.location : 'fridge',
+    // Total amount paid for this purchase. Optional: 0 means "not entered".
+    price: Number.isFinite(price) && price > 0 ? price : 0,
   }
 }
 
@@ -86,6 +89,7 @@ export function sanitizeRecipe(raw) {
   if (!name || ingredients.length === 0) return null
 
   const cookingTime = Number(raw.cookingTime)
+  const servings = Number(raw.servings)
 
   return {
     id: raw.id ?? createId(),
@@ -95,6 +99,7 @@ export function sanitizeRecipe(raw) {
     color: typeof raw.color === 'string' ? raw.color : '#ecfdf5',
     ingredients,
     cookingTime: Number.isFinite(cookingTime) && cookingTime > 0 ? cookingTime : 30,
+    servings: Number.isFinite(servings) && servings > 0 ? servings : DEFAULT_SERVINGS,
     difficulty: DIFFICULTIES.includes(raw.difficulty) ? raw.difficulty : 'Easy',
     instructions: Array.isArray(raw.instructions)
       ? raw.instructions.filter((step) => typeof step === 'string' && step.trim())
@@ -128,43 +133,37 @@ export function saveCustomRecipes(recipes) {
  * Dates are relative to today, so they are never stale.
  */
 export function getSampleInventory() {
-  const item = (name, quantity, unit, daysFromToday, location) => ({
+  const item = (name, quantity, unit, daysFromToday) => ({
     id: createId(),
     name,
     quantity,
     unit,
     dateAdded: dateFromToday(-3),
     expirationDate: dateFromToday(daysFromToday),
-    location,
   })
 
   return [
-    // Fridge
-    item('Chicken breast', 1.5, 'lb', 0, 'fridge'),
-    item('Spinach', 1, 'bag', 1, 'fridge'),
-    item('Mushrooms', 8, 'oz', 1, 'fridge'),
-    item('Milk', 6, 'cup', 2, 'fridge'),
-    item('Greek yogurt', 2, 'cup', 3, 'fridge'),
-    item('Tomatoes', 4, 'item', 4, 'fridge'),
-    item('Bell pepper', 2, 'item', 5, 'fridge'),
-    item('Broccoli', 1, 'head', 6, 'fridge'),
-    item('Eggs', 12, 'item', 10, 'fridge'),
-    item('Carrots', 6, 'item', 12, 'fridge'),
-    item('Cheddar cheese', 3, 'cup', 14, 'fridge'),
-    item('Butter', 16, 'tbsp', 40, 'fridge'),
-    item('Strawberries', 1, 'cup', -1, 'fridge'),
-    // Freezer
-    item('Ground beef', 1, 'lb', 90, 'freezer'),
-    item('Frozen peas', 2, 'cup', 120, 'freezer'),
-    // Pantry
-    item('Bananas', 3, 'item', 2, 'pantry'),
-    item('Bread', 10, 'slice', 3, 'pantry'),
-    item('Tortillas', 8, 'item', 8, 'pantry'),
-    item('Onion', 3, 'item', 20, 'pantry'),
-    item('Garlic', 10, 'clove', 30, 'pantry'),
-    item('Soy sauce', 10, 'tbsp', 180, 'pantry'),
-    item('Oats', 4, 'cup', 200, 'pantry'),
-    item('Pasta', 2, 'box', 300, 'pantry'),
-    item('Rice', 5, 'cup', 365, 'pantry'),
+    item('Chicken breast', 1.5, 'lb', 0),
+    item('Spinach', 1, 'bag', 1),
+    item('Mushrooms', 8, 'oz', 1),
+    item('Milk', 6, 'cup', 2),
+    item('Greek yogurt', 2, 'cup', 3),
+    item('Tomatoes', 4, 'item', 4),
+    item('Bell pepper', 2, 'item', 5),
+    item('Broccoli', 1, 'head', 6),
+    item('Eggs', 12, 'item', 10),
+    item('Carrots', 6, 'item', 12),
+    item('Cheddar cheese', 3, 'cup', 14),
+    item('Butter', 16, 'tbsp', 40),
+    item('Strawberries', 1, 'cup', -1),    item('Ground beef', 1, 'lb', 90),
+    item('Frozen peas', 2, 'cup', 120),    item('Bananas', 3, 'item', 2),
+    item('Bread', 10, 'slice', 3),
+    item('Tortillas', 8, 'item', 8),
+    item('Onion', 3, 'item', 20),
+    item('Garlic', 10, 'clove', 30),
+    item('Soy sauce', 10, 'tbsp', 180),
+    item('Oats', 4, 'cup', 200),
+    item('Pasta', 2, 'box', 300),
+    item('Rice', 5, 'cup', 365),
   ]
 }

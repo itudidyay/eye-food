@@ -1,21 +1,18 @@
 import { useState } from 'react'
-import { LOCATIONS } from '../utils/storage.js'
 import { dateFromToday, parseDate } from '../utils/expiration.js'
 import { COMMON_UNITS } from '../utils/options.js'
 import Autocomplete from './Autocomplete.jsx'
 import UnitInput from './UnitInput.jsx'
 
-// Used for both adding a new ingredient and editing an existing one.
-// If `initialValues` is passed, the form starts filled in (edit mode).
-// `pantryNames` fills the name suggestions; `unitOptions` fills the unit dropdown.
-export default function IngredientForm({ initialValues, onSubmit, onCancel, pantryNames = [], unitOptions = COMMON_UNITS }) {
+// Used for both adding and editing. If `initialValues` is passed, the form starts filled in.
+export default function IngredientForm({ initialValues, onSubmit, onCancel, onDelete, pantryNames = [], unitOptions = COMMON_UNITS }) {
   const [form, setForm] = useState({
     name: initialValues?.name ?? '',
     quantity: initialValues?.quantity ?? 1,
     unit: initialValues?.unit ?? 'item',
     dateAdded: initialValues?.dateAdded || dateFromToday(0),
     expirationDate: initialValues?.expirationDate ?? dateFromToday(7),
-    location: initialValues?.location ?? 'fridge',
+    price: initialValues?.price ? String(initialValues.price) : '',
   })
   const [errors, setErrors] = useState({})
 
@@ -23,20 +20,15 @@ export default function IngredientForm({ initialValues, onSubmit, onCancel, pant
     setForm((current) => ({ ...current, [name]: value }))
   }
 
-  function handleChange(event) {
-    setField(event.target.name, event.target.value)
-  }
-
   function validate() {
     const newErrors = {}
-    if (!form.name.trim()) newErrors.name = 'Please enter a name.'
+    if (!form.name.trim()) newErrors.name = 'Enter a name.'
     const quantity = Number(form.quantity)
-    if (form.quantity === '' || !Number.isFinite(quantity) || quantity <= 0) {
-      newErrors.quantity = 'Enter a number greater than 0.'
-    }
-    if (!form.unit.trim()) newErrors.unit = 'Please choose or type a unit.'
-    if (!parseDate(form.dateAdded)) newErrors.dateAdded = 'Please pick a valid date.'
-    if (!parseDate(form.expirationDate)) newErrors.expirationDate = 'Please pick a valid date.'
+    if (form.quantity === '' || !Number.isFinite(quantity) || quantity <= 0) newErrors.quantity = 'Must be greater than 0.'
+    if (!form.unit.trim()) newErrors.unit = 'Enter a unit.'
+    if (!parseDate(form.dateAdded)) newErrors.dateAdded = 'Pick a date.'
+    if (!parseDate(form.expirationDate)) newErrors.expirationDate = 'Pick a date.'
+    if (form.price !== '' && !(Number(form.price) >= 0)) newErrors.price = 'Must be 0 or more.'
     return newErrors
   }
 
@@ -52,31 +44,30 @@ export default function IngredientForm({ initialValues, onSubmit, onCancel, pant
       unit: form.unit.trim(),
       dateAdded: form.dateAdded,
       expirationDate: form.expirationDate,
-      location: form.location,
+      price: form.price === '' ? 0 : Number(form.price),
     })
   }
 
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
       <div className="form-field">
-        <label htmlFor="name">Ingredient name</label>
+        <label htmlFor="name">Name</label>
         <Autocomplete
           id="name"
           value={form.name}
           onChange={(name) => setField('name', name)}
           suggestions={pantryNames}
-          placeholder="e.g. Spinach"
-          ariaLabel="Ingredient name"
+          placeholder="Spinach"
+          ariaLabel="Name"
           autoFocus
         />
-        <p className="form-hint">Start typing. Matching items from your pantry appear below.</p>
         {errors.name && <p className="form-error">{errors.name}</p>}
       </div>
 
       <div className="form-row">
         <div className="form-field">
           <label htmlFor="quantity">Quantity</label>
-          <input id="quantity" name="quantity" type="number" min="0" step="any" value={form.quantity} onChange={handleChange} />
+          <input id="quantity" type="number" min="0" step="any" value={form.quantity} onChange={(e) => setField('quantity', e.target.value)} />
           {errors.quantity && <p className="form-error">{errors.quantity}</p>}
         </div>
         <div className="form-field">
@@ -88,35 +79,37 @@ export default function IngredientForm({ initialValues, onSubmit, onCancel, pant
 
       <div className="form-row">
         <div className="form-field">
-          <label htmlFor="dateAdded">Date bought / added</label>
-          <input id="dateAdded" name="dateAdded" type="date" value={form.dateAdded} onChange={handleChange} />
+          <label htmlFor="dateAdded">Bought</label>
+          <input id="dateAdded" type="date" value={form.dateAdded} onChange={(e) => setField('dateAdded', e.target.value)} />
           {errors.dateAdded && <p className="form-error">{errors.dateAdded}</p>}
         </div>
         <div className="form-field">
-          <label htmlFor="expirationDate">Expiration date</label>
-          <input id="expirationDate" name="expirationDate" type="date" value={form.expirationDate} onChange={handleChange} />
+          <label htmlFor="expirationDate">Expires</label>
+          <input id="expirationDate" type="date" value={form.expirationDate} onChange={(e) => setField('expirationDate', e.target.value)} />
           {errors.expirationDate && <p className="form-error">{errors.expirationDate}</p>}
         </div>
       </div>
 
-      <fieldset className="form-field">
-        <legend>Storage location</legend>
-        <div className="segmented">
-          {LOCATIONS.map((location) => (
-            <label key={location} className={`segmented-option ${form.location === location ? 'active' : ''}`}>
-              <input type="radio" name="location" value={location} checked={form.location === location} onChange={handleChange} />
-              {location}
-            </label>
-          ))}
+      <div className="form-field">
+        <label htmlFor="price">Price paid</label>
+        <div className="input-with-prefix">
+          <span>$</span>
+          <input id="price" type="number" min="0" step="0.01" placeholder="Optional" value={form.price} onChange={(e) => setField('price', e.target.value)} />
         </div>
-      </fieldset>
+        {errors.price && <p className="form-error">{errors.price}</p>}
+      </div>
 
       <div className="form-actions">
-        <button type="button" className="button button-secondary" onClick={onCancel}>
+        {initialValues && onDelete && (
+          <button type="button" className="text-button danger form-delete" onClick={onDelete}>
+            Delete
+          </button>
+        )}
+        <button type="button" className="text-button" onClick={onCancel}>
           Cancel
         </button>
-        <button type="submit" className="button button-primary">
-          {initialValues ? 'Save changes' : 'Add ingredient'}
+        <button type="submit" className="button">
+          {initialValues ? 'Save' : 'Add'}
         </button>
       </div>
     </form>

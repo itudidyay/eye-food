@@ -1,10 +1,8 @@
-import { ChefHat, LayoutDashboard, Refrigerator } from 'lucide-react'
-
-// Shared by the desktop Sidebar and the mobile Navbar.
+// Shared by the desktop Sidebar and the mobile Navbar. The first item is the start page.
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'pantry', label: 'My Pantry', icon: Refrigerator },
-  { id: 'recipes', label: 'Discover Recipes', shortLabel: 'Recipes', icon: ChefHat },
+  { id: 'search', label: 'Search' },
+  { id: 'pantry', label: 'Pantry' },
+  { id: 'stores', label: 'Stores' },
 ]
 
 export default navItems

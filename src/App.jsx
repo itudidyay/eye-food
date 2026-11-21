@@ -1,27 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CircleCheck } from 'lucide-react'
 import Navbar from './components/Navbar.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import Modal from './components/Modal.jsx'
 import IngredientForm from './components/IngredientForm.jsx'
 import RecipeForm from './components/RecipeForm.jsx'
 import RecipeDetails from './components/RecipeDetails.jsx'
-import Dashboard from './pages/Dashboard.jsx'
-import Pantry from './pages/Pantry.jsx'
-import Recipes from './pages/Recipes.jsx'
+import Fridge from './pages/Fridge.jsx'
+import Stores from './pages/Stores.jsx'
 import builtInRecipes from './data/recipes.js'
 import useInventory from './hooks/useInventory.js'
 import useCustomRecipes from './hooks/useCustomRecipes.js'
-import { getRecommendations, scoreRecipe } from './utils/recommendation.js'
-import { getDaysUntilExpiration } from './utils/expiration.js'
+import { scoreRecipe } from './utils/recommendation.js'
 import { getPantryNames, getUnitOptions } from './utils/options.js'
 
-const PAGES = ['dashboard', 'pantry', 'recipes']
+const PAGES = ['search', 'pantry', 'stores']
 
 // Read the page from the URL (#pantry) so refreshing keeps you on the same page.
 function getPageFromHash() {
   const page = window.location.hash.replace('#', '')
-  return PAGES.includes(page) ? page : 'dashboard'
+  return PAGES.includes(page) ? page : 'search'
 }
 
 export default function App() {
@@ -60,15 +57,8 @@ export default function App() {
   // Built-in recipes plus the ones the user wrote.
   const allRecipes = useMemo(() => [...builtInRecipes, ...customRecipes], [customRecipes])
 
-  // Recalculate only when the inputs change.
-  const recommendations = useMemo(() => getRecommendations(allRecipes, inventory), [allRecipes, inventory])
   const pantryNames = useMemo(() => getPantryNames(inventory), [inventory])
   const unitOptions = useMemo(() => getUnitOptions(inventory, allRecipes), [inventory, allRecipes])
-
-  const urgentCount = inventory.filter((item) => {
-    const days = getDaysUntilExpiration(item.expirationDate)
-    return days !== null && days >= 0 && days <= 3
-  }).length
 
   function navigate(nextPage) {
     window.location.hash = nextPage
@@ -85,6 +75,7 @@ export default function App() {
   function handleDelete(ingredient) {
     if (window.confirm(`Delete "${ingredient.name}" from your kitchen?`)) {
       deleteIngredient(ingredient.id)
+      closeModal()
       setToast(`Deleted ${ingredient.name}`)
     }
   }
@@ -117,38 +108,26 @@ export default function App() {
 
   return (
     <div className="app">
-      <Sidebar currentPage={page} onNavigate={navigate} urgentCount={urgentCount} />
-      <Navbar currentPage={page} onNavigate={navigate} urgentCount={urgentCount} />
+      <Sidebar currentPage={page} onNavigate={navigate} />
+      <Navbar currentPage={page} onNavigate={navigate} />
 
       <main className="main">
-        {page === 'dashboard' && (
-          <Dashboard
-            inventory={inventory}
-            recommendations={recommendations}
+        {/* Search and Pantry share one fridge scene, so moving between them animates. */}
+        {(page === 'search' || page === 'pantry') && (
+          <Fridge
+            page={page}
             onNavigate={navigate}
-            onSelectRecipe={openRecipe}
-            onAddIngredient={openAddForm}
-          />
-        )}
-        {page === 'pantry' && (
-          <Pantry
+            recipes={allRecipes}
             inventory={inventory}
-            onAdd={openAddForm}
-            onEdit={openEditForm}
-            onDelete={handleDelete}
+            onOpenRecipe={openRecipe}
+            onAddRecipe={openAddRecipe}
+            onAddIngredient={openAddForm}
+            onEditIngredient={openEditForm}
             onLoadSample={handleLoadSample}
             onClearAll={handleClearAll}
           />
         )}
-        {page === 'recipes' && (
-          <Recipes
-            recommendations={recommendations}
-            totalRecipes={allRecipes.length}
-            onSelectRecipe={openRecipe}
-            onNavigate={navigate}
-            onAddRecipe={openAddRecipe}
-          />
-        )}
+        {page === 'stores' && <Stores recipes={allRecipes} inventory={inventory} />}
       </main>
 
       {modal?.type === 'add' && (
@@ -173,6 +152,7 @@ export default function App() {
             pantryNames={pantryNames}
             unitOptions={unitOptions}
             onCancel={closeModal}
+            onDelete={() => handleDelete(modal.ingredient)}
             onSubmit={(data) => {
               updateIngredient(modal.ingredient.id, data)
               closeModal()
@@ -205,7 +185,7 @@ export default function App() {
             onCook={(deductions) => {
               deductIngredients(deductions)
               closeModal()
-              setToast('Enjoy your meal! Your pantry has been updated 🎉')
+              setToast('Pantry updated')
             }}
           />
         </Modal>
@@ -213,7 +193,6 @@ export default function App() {
 
       {toast && (
         <div className="toast" role="status">
-          <CircleCheck size={18} />
           {toast}
         </div>
       )}

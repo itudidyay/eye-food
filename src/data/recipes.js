@@ -498,4 +498,5 @@ const recipes = [
   },
 ]
 
-export default recipes
+// Every built-in recipe serves 4 unless it sets its own `servings`.
+export default recipes.map((recipe) => ({ servings: 4, ...recipe }))
