@@ -5,6 +5,7 @@ import { dateFromToday, parseDate } from './expiration.js'
 
 const STORAGE_KEY = 'fridgewise.inventory.v1'
 const RECIPES_KEY = 'fridgewise.customRecipes.v1'
+const SHOPPING_KEY = 'fridgewise.shoppingList.v1'
 
 export const DIFFICULTIES = ['Easy', 'Medium', 'Hard']
 // Recipes without a servings count (older saves, built-ins that don't set one) serve 4.
@@ -129,6 +130,28 @@ export function saveCustomRecipes(recipes) {
     localStorage.setItem(RECIPES_KEY, JSON.stringify(recipes))
   } catch (error) {
     console.warn('Could not save custom recipes to localStorage:', error)
+  }
+}
+
+/** Load the shopping list. Each item is { id, text, done }. Broken entries are dropped. */
+export function loadShoppingList() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SHOPPING_KEY) ?? '[]')
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((item) => item && typeof item.text === 'string' && item.text.trim())
+      .map((item) => ({ id: item.id ?? createId(), text: item.text.trim(), done: Boolean(item.done) }))
+  } catch (error) {
+    console.warn('Could not read the shopping list from localStorage:', error)
+    return []
+  }
+}
+
+export function saveShoppingList(items) {
+  try {
+    localStorage.setItem(SHOPPING_KEY, JSON.stringify(items))
+  } catch (error) {
+    console.warn('Could not save the shopping list to localStorage:', error)
   }
 }
 

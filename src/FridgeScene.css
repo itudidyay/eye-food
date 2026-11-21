@@ -191,6 +191,155 @@
   color: #c93a2b;
 }
 
+/* ---------- 1c. Shopping list on the wall, left of the fridge ---------- */
+
+/* Mirrors the name sign: same size rule, measured from the other side of the fridge. */
+.wall-list {
+  left: auto;
+  right: calc(50% + var(--fw) * 0.95);
+  top: calc(90vh - var(--fh) * 0.66);
+  bottom: auto;
+  /* The camera layer ignores clicks, so the list has to opt back in. */
+  pointer-events: auto;
+}
+
+/* Lined notepad paper */
+.wall-list-paper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3cqw;
+  padding: 8cqw 6cqw 6cqw;
+  border-radius: 1cqw;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 9.6cqw, rgba(120, 150, 190, 0.28) 9.6cqw 10cqw),
+    linear-gradient(175deg, #fffdf6 0%, #f6efdf 100%);
+  box-shadow: 0 2.5cqw 4cqw rgba(74, 28, 18, 0.32);
+  color: #1d2a44;
+  font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  font-size: 5.6cqw;
+  line-height: 10cqw;
+  transform: rotate(1.5deg);
+}
+
+/* Tape, like the note on the other wall */
+.wall-list-paper::before {
+  content: "";
+  position: absolute;
+  top: -3cqw;
+  left: 50%;
+  width: 26cqw;
+  height: 6cqw;
+  margin-left: -13cqw;
+  background: rgba(255, 244, 200, 0.85);
+  box-shadow: 0 0.6cqw 1cqw rgba(60, 35, 60, 0.25);
+  transform: rotate(-2deg);
+}
+
+.wall-list-paper .wall-note-title {
+  margin: 0;
+  line-height: 10cqw;
+}
+
+.wall-list-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A long list (see MAX_VISIBLE in ShoppingList.jsx) scrolls inside the paper. */
+.wall-list-items.is-long {
+  max-height: 70cqw;
+  overflow-y: auto;
+}
+
+.wall-list-items li {
+  display: flex;
+  align-items: center;
+  gap: 2cqw;
+}
+
+.wall-list-items label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 3cqw;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.wall-list-items label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wall-list-items input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 5cqw;
+  height: 5cqw;
+  margin: 0;
+  accent-color: #c93a2b;
+  cursor: pointer;
+}
+
+.wall-list-items li.is-done span {
+  color: #8d93a3;
+  text-decoration: line-through;
+}
+
+/* The cross that removes an item, and the "clear ticked" link */
+.wall-list-items button,
+.wall-list-clear {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #8d93a3;
+  font: inherit;
+  cursor: pointer;
+}
+
+.wall-list-items button {
+  font-size: 7cqw;
+  line-height: 1;
+}
+
+.wall-list-items button:hover,
+.wall-list-clear:hover {
+  color: #c93a2b;
+}
+
+.wall-list-clear {
+  align-self: flex-end;
+  font-size: 4.6cqw;
+  line-height: 1.4;
+  text-decoration: underline;
+}
+
+.wall-list-paper form input {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #1d2a44;
+  font: inherit;
+  line-height: 10cqw;
+}
+
+.wall-list-paper form input::placeholder {
+  color: #9aa3ad;
+}
+
+/* No focus box: a marker-red underline shows where you are writing. */
+.wall-list-paper form input,
+.wall-list-paper form input:focus-visible {
+  outline: none;
+}
+
+.wall-list-paper form input:focus-visible {
+  box-shadow: 0 0.5cqw 0 #c93a2b;
+}
+
 @keyframes sign-blink {
   0%,
   94%,

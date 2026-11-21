@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import FridgeShelves, { PANTRY_SORTS } from '../components/FridgeShelves.jsx'
 import { IngredientsList, RecipeSummary } from '../components/RecipeAnswer.jsx'
 import RecipeImage from '../components/RecipeImage.jsx'
+import ShoppingList from '../components/ShoppingList.jsx'
 import { getRecommendations, scaleResult } from '../utils/recommendation.js'
 import { searchRecipes } from '../utils/search.js'
 import { getIngredientIcon } from '../utils/ingredientIcons.js'
@@ -270,7 +271,7 @@ export default function Fridge({
               <span />
             </span>
             <span className="wall-sign-name">
-              <b>Eye</b>Fridge
+              <b>Eye</b>Food
             </span>
           </div>
         </div>
@@ -297,9 +298,17 @@ export default function Fridge({
                   Click the <b>whiteboard</b> to search up a recipe
                 </span>
               </li>
+              <li>
+                <span aria-hidden="true">🛒</span>
+                <span>
+                  Click the <b>shopping list</b> to write down what to buy
+                </span>
+              </li>
             </ul>
           </div>
         </div>
+        {/* A shopping list taped to the wall on the other side of the fridge. */}
+        <ShoppingList active={isFront} />
         <div className="fridge-shadow" aria-hidden="true" />
         <div className="fridge3d">
           <div className="f-side" aria-hidden="true" />
