@@ -56,36 +56,36 @@ export default function BarcodeScanner({ onDetected, onCancel }) {
     let controls = null
     let finished = false // true once we've reported a barcode or the scanner is closing
 
-    // Turn the camera off: stop the scanner, then stop every track on the video stream.
-    function stopCamera() {
-      controls?.stop()
-      video?.srcObject?.getTracks?.().forEach((track) => track.stop())
-      if (video) video.srcObject = null
-    }
-
-    reader
-      .decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } } }, video, (result) => {
-        // Called for every frame. Most frames have no barcode, which is normal, so we ignore those.
-        if (result && !finished) {
+    // React's development mode mounts this effect twice in a row (StrictMode). Starting the
+    // camera on a short timer means the first, immediately-cancelled mount never touches the
+    // camera, so only one camera session runs and nothing fights over the same <video> element.
+    const startTimer = setTimeout(() => {
+      reader
+        .decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } } }, video, (result) => {
+          // Called for every frame. Most frames have no barcode, which is normal, so we ignore those.
+          if (result && !finished) {
+            finished = true
+            controls?.stop() // zxing stops the camera tracks it opened
+            onDetectedRef.current(result.getText())
+          }
+        })
+        .then((scannerControls) => {
+          controls = scannerControls
+          // The user left (or a code was found) before the camera finished starting.
+          if (finished) scannerControls.stop()
+        })
+        .catch((cameraError) => {
+          if (finished) return
           finished = true
-          stopCamera()
-          onDetectedRef.current(result.getText())
-        }
-      })
-      .then((scannerControls) => {
-        controls = scannerControls
-        // If the user left (or a code was found) before the camera finished starting, stop it now.
-        if (finished) stopCamera()
-      })
-      .catch((cameraError) => {
-        finished = true
-        setError(describeCameraError(cameraError))
-        setStarting(false)
-      })
+          setError(describeCameraError(cameraError))
+          setStarting(false)
+        })
+    }, 0)
 
     return () => {
       finished = true
-      stopCamera()
+      clearTimeout(startTimer)
+      controls?.stop()
     }
   }, [])
 
