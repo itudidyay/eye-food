@@ -239,7 +239,6 @@ textarea:focus-visible {
   line-height: 2;
 }
 
-
 /* ---------- 5. Cards and lists ---------- */
 .card {
   display: flex;
@@ -383,10 +382,6 @@ textarea:focus-visible {
 
 .expiry-expired .row-expiry {
   color: var(--danger);
-}
-
-.recipe-cost {
-  font-weight: 600;
 }
 
 .section-title {
@@ -751,6 +746,48 @@ fieldset {
   z-index: 0;
 }
 
+.map-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: #07090a;
+  pointer-events: none;
+  animation: veil-out 0.8s ease both;
+}
+
+/* Leaving with the Back button: the map dims to black before the fridge returns. */
+.map-veil.is-closing {
+  animation: veil-in 0.5s ease both;
+}
+
+@keyframes veil-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.map-back {
+  align-self: flex-start;
+}
+
+@keyframes veil-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-veil {
+    display: none;
+  }
+}
+
 .map-panel {
   position: fixed;
   top: 16px;
@@ -799,46 +836,6 @@ fieldset {
   color: var(--muted);
 }
 
-.shopping-card {
-  margin-top: 32px;
-}
-
-.shopping-head h2 {
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.select-box {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 0.8125rem;
-}
-
-.select-box select {
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 0.9375rem;
-}
-
-.shopping-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.shopping-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 0;
-  border-top: 1px solid var(--border);
-}
-
 /* ---------- 9. Responsive ---------- */
 @media (max-width: 760px) {
   .answer,
@@ -884,5 +881,4 @@ fieldset {
     max-height: 46vh;
   }
 }
-
 

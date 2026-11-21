@@ -13,7 +13,7 @@ import useCustomRecipes from './hooks/useCustomRecipes.js'
 import { scoreRecipe } from './utils/recommendation.js'
 import { getPantryNames, getUnitOptions } from './utils/options.js'
 
-const PAGES = ['search', 'pantry', 'stores']
+const PAGES = ['search', 'recipes', 'pantry', 'stores']
 
 // Read the page from the URL (#pantry) so refreshing keeps you on the same page.
 function getPageFromHash() {
@@ -39,6 +39,10 @@ export default function App() {
   // { type: 'add-recipe' }, or { type: 'recipe', recipeId }
   const [modal, setModal] = useState(null)
   const [toast, setToast] = useState(null)
+  // Set while the fridge scene plays its exit animation toward another page.
+  const [leavingTo, setLeavingTo] = useState(null)
+  // True when the fridge scene is being entered from the map with the Back button.
+  const [cameFromMap, setCameFromMap] = useState(false)
 
   // Keep the page in sync with the browser's back and forward buttons.
   useEffect(() => {
@@ -60,10 +64,32 @@ export default function App() {
   const pantryNames = useMemo(() => getPantryNames(inventory), [inventory])
   const unitOptions = useMemo(() => getUnitOptions(inventory, allRecipes), [inventory, allRecipes])
 
-  function navigate(nextPage) {
+  function goTo(nextPage, { fromMap = false } = {}) {
+    setCameFromMap(fromMap)
     window.location.hash = nextPage
     setPage(nextPage)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // The Back button on the map: return to the closed fridge, zooming out of the door map.
+  function backFromMap() {
+    goTo('search', { fromMap: true })
+  }
+
+  function navigate(nextPage) {
+    // Leaving the fridge for the map: the fridge scene zooms into the door map and dims
+    // to black first, then calls finishLeaving. Any other click cancels a pending leave.
+    if (nextPage === 'stores' && page !== 'stores') {
+      setLeavingTo('stores')
+      return
+    }
+    setLeavingTo(null)
+    goTo(nextPage)
+  }
+
+  function finishLeaving() {
+    if (leavingTo) goTo(leavingTo)
+    setLeavingTo(null)
   }
 
   const closeModal = () => setModal(null)
@@ -112,11 +138,14 @@ export default function App() {
       <Navbar currentPage={page} onNavigate={navigate} />
 
       <main className="main">
-        {/* Search and Pantry share one fridge scene, so moving between them animates. */}
-        {(page === 'search' || page === 'pantry') && (
+        {/* Search, Recipes and Pantry share one fridge scene, so moving between them animates. */}
+        {page !== 'stores' && (
           <Fridge
             page={page}
             onNavigate={navigate}
+            leavingTo={leavingTo}
+            onLeaveDone={finishLeaving}
+            arriveFromMap={cameFromMap}
             recipes={allRecipes}
             inventory={inventory}
             onOpenRecipe={openRecipe}
@@ -127,7 +156,7 @@ export default function App() {
             onClearAll={handleClearAll}
           />
         )}
-        {page === 'stores' && <Stores recipes={allRecipes} inventory={inventory} />}
+        {page === 'stores' && <Stores onBack={backFromMap} />}
       </main>
 
       {modal?.type === 'add' && (

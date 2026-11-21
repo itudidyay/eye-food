@@ -132,6 +132,65 @@
   color: #c93a2b;
 }
 
+/* "How it works" note, taped to the wall under the name sign. */
+.wall-note {
+  top: calc(90vh - var(--fh) * 0.5);
+  bottom: auto;
+}
+
+.wall-note-paper {
+  position: relative;
+  padding: 7cqw 6cqw 6cqw;
+  border-radius: 1cqw;
+  background: linear-gradient(175deg, #fffdf6 0%, #f6efdf 100%);
+  box-shadow: 0 2.5cqw 4cqw rgba(74, 28, 18, 0.32);
+  color: #1d2a44;
+  font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  font-size: 5.6cqw;
+  line-height: 1.35;
+  transform: rotate(-1.5deg);
+}
+
+/* Tape, like the map on the freezer door */
+.wall-note-paper::before {
+  content: "";
+  position: absolute;
+  top: -3cqw;
+  left: 50%;
+  width: 26cqw;
+  height: 6cqw;
+  margin-left: -13cqw;
+  background: rgba(255, 244, 200, 0.85);
+  box-shadow: 0 0.6cqw 1cqw rgba(60, 35, 60, 0.25);
+  transform: rotate(2deg);
+}
+
+.wall-note-title {
+  margin: 0 0 3cqw;
+  font-size: 7cqw;
+  font-weight: 700;
+  text-align: center;
+}
+
+.wall-note-paper ul {
+  display: flex;
+  flex-direction: column;
+  gap: 3cqw;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wall-note-paper li {
+  display: flex;
+  align-items: flex-start;
+  gap: 3cqw;
+}
+
+.wall-note-paper b {
+  color: #c93a2b;
+}
+
 @keyframes sign-blink {
   0%,
   94%,
@@ -287,14 +346,12 @@
   background: linear-gradient(180deg, #c2b6d3 0%, #d6c0cc 55%, #e8c6c0 100%);
 }
 
-/* Both doors lead to the Pantry. */
-.phase-front .f-door-top,
+/* The fridge door leads to the Pantry. The freezer door does nothing. */
 .phase-front .f-door-front {
   cursor: pointer;
   transition: filter 0.2s ease;
 }
 
-.phase-front .f-door-top:hover,
 .phase-front .f-door-front:hover {
   filter: brightness(1.04);
 }
@@ -499,7 +556,8 @@
 }
 
 .phase-dark .scene-dark,
-.phase-closing .scene-dark {
+.phase-closing .scene-dark,
+.phase-map-dark .scene-dark {
   opacity: 1;
 }
 
@@ -527,8 +585,10 @@
   transition: filter 0.6s ease;
 }
 
-/* The shelves fall back a little so the cards read clearly. */
-.show-results .interior-inner {
+/* The shelves fall back a little so the cards read clearly.
+   Applied while the screen is still black, so it is never seen as a second dim. */
+.dim-shelves .interior-inner,
+.phase-closing .interior-inner {
   filter: brightness(0.62) saturate(0.9) blur(1.5px);
 }
 
@@ -728,8 +788,18 @@
   gap: 12px;
 }
 
-.results-search {
+.results-search,
+.results-heading {
   flex: 1;
+}
+
+/* Title of the Recipes tab, where the search box sits on Search. */
+.results-heading {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-shadow: 0 2px 10px rgba(15, 25, 32, 0.55);
 }
 
 .results-search input,
@@ -812,6 +882,39 @@
   pointer-events: auto;
 }
 
+/* Sort control, styled to sit beside the pill buttons. */
+.pill-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px 0 16px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 0.875rem;
+  box-shadow: 0 10px 24px rgba(15, 25, 32, 0.28);
+}
+
+.pill-select select {
+  padding: 12px 6px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.pill-select select:focus-visible,
+.results-search input:focus-visible {
+  outline: none;
+}
+
+.pill-select:focus-within,
+.results-search input:focus-visible {
+  box-shadow: 0 10px 24px rgba(15, 25, 32, 0.28), 0 0 0 3px rgba(255, 255, 255, 0.75);
+}
+
 .pill-button.primary {
   background: var(--text);
   color: #ffffff;
@@ -841,9 +944,39 @@
 .phase-opening .camera,
 .phase-dark .camera,
 .phase-interior .camera,
-.phase-open .camera {
+.phase-open .camera,
+.phase-closing .camera {
   transform: scale(1.9) translateY(-9%);
   transition-delay: 0.3s;
+}
+
+/* Leaving for Stores: the camera dives into the map on the freezer door.
+     The zoom point and the shift to screen centre are measured in Fridge.jsx. */
+.phase-map-zoom .camera,
+.phase-map-dark .camera {
+  transform-origin: var(--zoom-x, 50%) var(--zoom-y, 30%);
+  transform: translate(var(--zoom-dx, 0px), var(--zoom-dy, 0px)) scale(6);
+  transition: transform 1.5s cubic-bezier(0.6, 0, 0.85, 0.6);
+}
+
+/* Back from Stores: start black and zoomed into the door map, with no animation... */
+.phase-map-arrive .scene-dark,
+.phase-map-zoomed .scene-dark {
+  opacity: 1;
+  transition: none;
+}
+
+.phase-map-zoomed .camera {
+  transform-origin: var(--zoom-x, 50%) var(--zoom-y, 30%);
+  transform: translate(var(--zoom-dx, 0px), var(--zoom-dy, 0px)) scale(6);
+  transition: none;
+}
+
+/* ...then the black lifts and the camera pulls back out to the whole fridge. */
+.phase-map-out .camera {
+  transform-origin: var(--zoom-x, 50%) var(--zoom-y, 30%);
+  transform: none;
+  transition: transform 1.4s cubic-bezier(0.2, 0.6, 0.2, 1);
 }
 
 /* First visit: the camera travels in and the fridge turns to face us. */
@@ -857,11 +990,6 @@
 
 .phase-entry .whiteboard {
   animation: board-in 0.5s ease 1.9s both;
-}
-
-/* The fridge light flickers on. */
-.phase-interior .interior-inner {
-  animation: light-on 0.9s ease both;
 }
 
 .show-results .results .card {
@@ -896,21 +1024,6 @@
   }
   to {
     opacity: 1;
-  }
-}
-
-@keyframes light-on {
-  0% {
-    filter: brightness(0.15);
-  }
-  35% {
-    filter: brightness(0.7);
-  }
-  50% {
-    filter: brightness(0.4);
-  }
-  100% {
-    filter: brightness(1);
   }
 }
 
@@ -1005,6 +1118,14 @@
 .recipe-tile-count.is-ready {
   color: #15803d;
   font-weight: 600;
+}
+
+/* Ingredients this recipe uses that are about to go bad. */
+.recipe-tile-soon {
+  color: #b45309;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 /* How much of the recipe is already in the fridge. */
