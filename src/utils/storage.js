@@ -41,6 +41,10 @@ export function sanitizeIngredient(raw) {
     expirationDate: typeof raw.expirationDate === 'string' ? raw.expirationDate : '',
     // Total amount paid for this purchase. Optional: 0 means "not entered".
     price: Number.isFinite(price) && price > 0 ? price : 0,
+    // Product details from a barcode scan. All optional.
+    brand: typeof raw.brand === 'string' ? raw.brand.trim().slice(0, 100) : '',
+    imageUrl: typeof raw.imageUrl === 'string' && /^https:\/\//.test(raw.imageUrl.trim()) ? raw.imageUrl.trim() : '',
+    barcode: typeof raw.barcode === 'string' && /^\d{8,14}$/.test(raw.barcode) ? raw.barcode : '',
   }
 }
 
