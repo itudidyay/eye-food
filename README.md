@@ -1,8 +1,8 @@
-# 🌱 EyeFridge
+# 🌱 EyeFood
 
 **Cook what you have before it goes to waste.**
 
-EyeFridge tracks what is in your fridge, freezer, and pantry (with expiry dates and what you paid), suggests recipes that use your *most urgent* ingredients first, estimates what each recipe costs, and shows nearby grocery shops on an OpenStreetMap map.
+EyeFood tracks what is in your fridge, freezer, and pantry (with expiry dates and what you paid), suggests recipes that use your *most urgent* ingredients first, estimates what each recipe costs, and shows nearby grocery shops on an OpenStreetMap map.
 
 ## Run it
 

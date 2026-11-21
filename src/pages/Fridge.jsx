@@ -270,7 +270,7 @@ export default function Fridge({
               <span />
             </span>
             <span className="wall-sign-name">
-              <b>Eye</b>Fridge
+              <b>Eye</b>Food
             </span>
           </div>
         </div>

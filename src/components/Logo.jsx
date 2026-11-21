@@ -1,3 +1,3 @@
 export default function Logo() {
-  return <div className="logo">EyeFridge</div>
+  return <div className="logo">EyeFood</div>
 }
