@@ -541,6 +541,18 @@ const chainStores = [
     "address": "Vons, 5922",
     "lat": 33.728574,
     "lon": -118.024953
+  },
+  {
+    "brand": "Ralphs",
+    "address": "950 N La Brea Ave, Inglewood",
+    "lat": 33.9753759,
+    "lon": -118.3569884
+  },
+  {
+    "brand": "Ralphs",
+    "address": "10772 Jefferson Blvd, Culver City",
+    "lat": 34.00228,
+    "lon": -118.3933931
   }
 ]
 
