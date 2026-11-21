@@ -1,6 +1,6 @@
 import { Archive, Pencil, Refrigerator, Snowflake, Trash2 } from 'lucide-react'
 import ExpirationBadge from './ExpirationBadge.jsx'
-import { formatDate, getDaysUntilExpiration, getExpirationStatus } from '../utils/expiration.js'
+import { formatDate, getDaysUntilExpiration, getExpirationStatus, parseDate } from '../utils/expiration.js'
 
 export const LOCATION_ICONS = {
   fridge: Refrigerator,
@@ -21,6 +21,9 @@ export default function IngredientCard({ ingredient, onEdit, onDelete }) {
           <p className="ingredient-quantity">
             {ingredient.quantity} {ingredient.unit}
           </p>
+          {parseDate(ingredient.dateAdded) && (
+            <p className="added-on">Bought {formatDate(ingredient.dateAdded)}</p>
+          )}
         </div>
         <div className="ingredient-actions">
           <button className="icon-button" onClick={() => onEdit(ingredient)} aria-label={`Edit ${ingredient.name}`}>

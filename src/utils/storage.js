@@ -1,11 +1,13 @@
 // Everything that touches localStorage lives here, so the rest of the app
 // never has to worry about JSON parsing or broken data.
 
-import { dateFromToday } from './expiration.js'
+import { dateFromToday, parseDate } from './expiration.js'
 
 const STORAGE_KEY = 'fridgewise.inventory.v1'
+const RECIPES_KEY = 'fridgewise.customRecipes.v1'
 
 export const LOCATIONS = ['fridge', 'freezer', 'pantry']
+export const DIFFICULTIES = ['Easy', 'Medium', 'Hard']
 
 /** Make a unique ID. crypto.randomUUID is not available everywhere, so we have a fallback. */
 export function createId() {
@@ -32,6 +34,8 @@ export function sanitizeIngredient(raw) {
     name,
     quantity: Number.isFinite(quantity) && quantity >= 0 ? quantity : 1,
     unit: typeof raw.unit === 'string' && raw.unit.trim() ? raw.unit.trim() : 'item',
+    // Older saved items have no purchase date, so they default to today.
+    dateAdded: parseDate(raw.dateAdded) ? raw.dateAdded : dateFromToday(0),
     expirationDate: typeof raw.expirationDate === 'string' ? raw.expirationDate : '',
     location: LOCATIONS.includes(raw.location) ? raw.location : 'fridge',
   }
@@ -65,6 +69,60 @@ export function saveInventory(inventory) {
   }
 }
 
+/** Clean up one user-written recipe. Returns null if it has no name or no usable ingredients. */
+export function sanitizeRecipe(raw) {
+  if (!raw || typeof raw !== 'object') return null
+
+  const name = typeof raw.name === 'string' ? raw.name.trim() : ''
+  const ingredients = (Array.isArray(raw.ingredients) ? raw.ingredients : [])
+    .map((ing) => {
+      const amount = Number(ing?.amount)
+      const ingName = typeof ing?.name === 'string' ? ing.name.trim() : ''
+      if (!ingName || !(amount > 0)) return null
+      return { name: ingName, amount, unit: typeof ing.unit === 'string' && ing.unit.trim() ? ing.unit.trim() : 'item' }
+    })
+    .filter(Boolean)
+
+  if (!name || ingredients.length === 0) return null
+
+  const cookingTime = Number(raw.cookingTime)
+
+  return {
+    id: raw.id ?? createId(),
+    name,
+    description: typeof raw.description === 'string' ? raw.description : '',
+    image: typeof raw.image === 'string' && raw.image ? raw.image : '🍽️',
+    color: typeof raw.color === 'string' ? raw.color : '#ecfdf5',
+    ingredients,
+    cookingTime: Number.isFinite(cookingTime) && cookingTime > 0 ? cookingTime : 30,
+    difficulty: DIFFICULTIES.includes(raw.difficulty) ? raw.difficulty : 'Easy',
+    instructions: Array.isArray(raw.instructions)
+      ? raw.instructions.filter((step) => typeof step === 'string' && step.trim())
+      : [],
+    isCustom: true,
+  }
+}
+
+export function loadCustomRecipes() {
+  try {
+    const json = localStorage.getItem(RECIPES_KEY)
+    if (json === null) return []
+    const parsed = JSON.parse(json)
+    return Array.isArray(parsed) ? parsed.map(sanitizeRecipe).filter(Boolean) : []
+  } catch (error) {
+    console.warn('Could not read custom recipes from localStorage:', error)
+    return []
+  }
+}
+
+export function saveCustomRecipes(recipes) {
+  try {
+    localStorage.setItem(RECIPES_KEY, JSON.stringify(recipes))
+  } catch (error) {
+    console.warn('Could not save custom recipes to localStorage:', error)
+  }
+}
+
 /**
  * Demo data so the app looks alive on the first visit.
  * Dates are relative to today, so they are never stale.
@@ -75,6 +133,7 @@ export function getSampleInventory() {
     name,
     quantity,
     unit,
+    dateAdded: dateFromToday(-3),
     expirationDate: dateFromToday(daysFromToday),
     location,
   })

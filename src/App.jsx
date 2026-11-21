@@ -4,14 +4,17 @@ import Navbar from './components/Navbar.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import Modal from './components/Modal.jsx'
 import IngredientForm from './components/IngredientForm.jsx'
+import RecipeForm from './components/RecipeForm.jsx'
 import RecipeDetails from './components/RecipeDetails.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Pantry from './pages/Pantry.jsx'
 import Recipes from './pages/Recipes.jsx'
-import recipes from './data/recipes.js'
+import builtInRecipes from './data/recipes.js'
 import useInventory from './hooks/useInventory.js'
+import useCustomRecipes from './hooks/useCustomRecipes.js'
 import { getRecommendations, scoreRecipe } from './utils/recommendation.js'
 import { getDaysUntilExpiration } from './utils/expiration.js'
+import { getPantryNames, getUnitOptions } from './utils/options.js'
 
 const PAGES = ['dashboard', 'pantry', 'recipes']
 
@@ -32,8 +35,11 @@ export default function App() {
     clearInventory,
   } = useInventory()
 
+  const { customRecipes, addRecipe, deleteRecipe } = useCustomRecipes()
+
   const [page, setPage] = useState(getPageFromHash)
-  // Which pop-up is open: null, { type: 'add' }, { type: 'edit', ingredient }, or { type: 'recipe', recipeId }
+  // Which pop-up is open: null, { type: 'add' }, { type: 'edit', ingredient },
+  // { type: 'add-recipe' }, or { type: 'recipe', recipeId }
   const [modal, setModal] = useState(null)
   const [toast, setToast] = useState(null)
 
@@ -51,8 +57,13 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [toast])
 
-  // Recalculate recommendations only when the inventory changes.
-  const recommendations = useMemo(() => getRecommendations(recipes, inventory), [inventory])
+  // Built-in recipes plus the ones the user wrote.
+  const allRecipes = useMemo(() => [...builtInRecipes, ...customRecipes], [customRecipes])
+
+  // Recalculate only when the inputs change.
+  const recommendations = useMemo(() => getRecommendations(allRecipes, inventory), [allRecipes, inventory])
+  const pantryNames = useMemo(() => getPantryNames(inventory), [inventory])
+  const unitOptions = useMemo(() => getUnitOptions(inventory, allRecipes), [inventory, allRecipes])
 
   const urgentCount = inventory.filter((item) => {
     const days = getDaysUntilExpiration(item.expirationDate)
@@ -68,12 +79,21 @@ export default function App() {
   const closeModal = () => setModal(null)
   const openAddForm = () => setModal({ type: 'add' })
   const openEditForm = (ingredient) => setModal({ type: 'edit', ingredient })
+  const openAddRecipe = () => setModal({ type: 'add-recipe' })
   const openRecipe = (recipeId) => setModal({ type: 'recipe', recipeId })
 
   function handleDelete(ingredient) {
     if (window.confirm(`Delete "${ingredient.name}" from your kitchen?`)) {
       deleteIngredient(ingredient.id)
       setToast(`Deleted ${ingredient.name}`)
+    }
+  }
+
+  function handleDeleteRecipe(recipe) {
+    if (window.confirm(`Delete your recipe "${recipe.name}"?`)) {
+      deleteRecipe(recipe.id)
+      closeModal()
+      setToast(`Deleted ${recipe.name}`)
     }
   }
 
@@ -92,7 +112,7 @@ export default function App() {
   }
 
   // The selected recipe is re-scored from the *current* inventory every render.
-  const selectedRecipe = modal?.type === 'recipe' ? recipes.find((r) => r.id === modal.recipeId) : null
+  const selectedRecipe = modal?.type === 'recipe' ? allRecipes.find((r) => r.id === modal.recipeId) : null
   const selectedResult = selectedRecipe ? scoreRecipe(selectedRecipe, inventory) : null
 
   return (
@@ -123,9 +143,10 @@ export default function App() {
         {page === 'recipes' && (
           <Recipes
             recommendations={recommendations}
-            totalRecipes={recipes.length}
+            totalRecipes={allRecipes.length}
             onSelectRecipe={openRecipe}
             onNavigate={navigate}
+            onAddRecipe={openAddRecipe}
           />
         )}
       </main>
@@ -133,6 +154,8 @@ export default function App() {
       {modal?.type === 'add' && (
         <Modal title="Add ingredient" onClose={closeModal}>
           <IngredientForm
+            pantryNames={pantryNames}
+            unitOptions={unitOptions}
             onCancel={closeModal}
             onSubmit={(data) => {
               addIngredient(data)
@@ -147,6 +170,8 @@ export default function App() {
         <Modal title="Edit ingredient" onClose={closeModal}>
           <IngredientForm
             initialValues={modal.ingredient}
+            pantryNames={pantryNames}
+            unitOptions={unitOptions}
             onCancel={closeModal}
             onSubmit={(data) => {
               updateIngredient(modal.ingredient.id, data)
@@ -157,10 +182,26 @@ export default function App() {
         </Modal>
       )}
 
+      {modal?.type === 'add-recipe' && (
+        <Modal title="Add a recipe" onClose={closeModal} size="large">
+          <RecipeForm
+            pantryNames={pantryNames}
+            unitOptions={unitOptions}
+            onCancel={closeModal}
+            onSubmit={(data) => {
+              addRecipe(data)
+              closeModal()
+              setToast(`Saved recipe “${data.name}”`)
+            }}
+          />
+        </Modal>
+      )}
+
       {selectedResult && (
         <Modal title={selectedResult.recipe.name} onClose={closeModal} size="large">
           <RecipeDetails
             result={selectedResult}
+            onDelete={handleDeleteRecipe}
             onCook={(deductions) => {
               deductIngredients(deductions)
               closeModal()

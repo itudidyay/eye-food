@@ -1,24 +1,30 @@
 import { useState } from 'react'
 import { LOCATIONS } from '../utils/storage.js'
 import { dateFromToday, parseDate } from '../utils/expiration.js'
-
-const COMMON_UNITS = ['item', 'bag', 'box', 'can', 'jar', 'bottle', 'carton', 'cup', 'tbsp', 'lb', 'oz', 'g', 'kg', 'slice', 'clove', 'head', 'bunch', 'pack']
+import { COMMON_UNITS } from '../utils/options.js'
+import Autocomplete from './Autocomplete.jsx'
+import UnitInput from './UnitInput.jsx'
 
 // Used for both adding a new ingredient and editing an existing one.
 // If `initialValues` is passed, the form starts filled in (edit mode).
-export default function IngredientForm({ initialValues, onSubmit, onCancel }) {
+// `pantryNames` fills the name suggestions; `unitOptions` fills the unit dropdown.
+export default function IngredientForm({ initialValues, onSubmit, onCancel, pantryNames = [], unitOptions = COMMON_UNITS }) {
   const [form, setForm] = useState({
     name: initialValues?.name ?? '',
     quantity: initialValues?.quantity ?? 1,
     unit: initialValues?.unit ?? 'item',
+    dateAdded: initialValues?.dateAdded || dateFromToday(0),
     expirationDate: initialValues?.expirationDate ?? dateFromToday(7),
     location: initialValues?.location ?? 'fridge',
   })
   const [errors, setErrors] = useState({})
 
-  function handleChange(event) {
-    const { name, value } = event.target
+  function setField(name, value) {
     setForm((current) => ({ ...current, [name]: value }))
+  }
+
+  function handleChange(event) {
+    setField(event.target.name, event.target.value)
   }
 
   function validate() {
@@ -28,7 +34,8 @@ export default function IngredientForm({ initialValues, onSubmit, onCancel }) {
     if (form.quantity === '' || !Number.isFinite(quantity) || quantity <= 0) {
       newErrors.quantity = 'Enter a number greater than 0.'
     }
-    if (!form.unit.trim()) newErrors.unit = 'Please enter a unit.'
+    if (!form.unit.trim()) newErrors.unit = 'Please choose or type a unit.'
+    if (!parseDate(form.dateAdded)) newErrors.dateAdded = 'Please pick a valid date.'
     if (!parseDate(form.expirationDate)) newErrors.expirationDate = 'Please pick a valid date.'
     return newErrors
   }
@@ -43,6 +50,7 @@ export default function IngredientForm({ initialValues, onSubmit, onCancel }) {
       name: form.name.trim(),
       quantity: Number(form.quantity),
       unit: form.unit.trim(),
+      dateAdded: form.dateAdded,
       expirationDate: form.expirationDate,
       location: form.location,
     })
@@ -52,7 +60,16 @@ export default function IngredientForm({ initialValues, onSubmit, onCancel }) {
     <form className="form" onSubmit={handleSubmit} noValidate>
       <div className="form-field">
         <label htmlFor="name">Ingredient name</label>
-        <input id="name" name="name" value={form.name} onChange={handleChange} placeholder="e.g. Spinach" autoFocus />
+        <Autocomplete
+          id="name"
+          value={form.name}
+          onChange={(name) => setField('name', name)}
+          suggestions={pantryNames}
+          placeholder="e.g. Spinach"
+          ariaLabel="Ingredient name"
+          autoFocus
+        />
+        <p className="form-hint">Start typing. Matching items from your pantry appear below.</p>
         {errors.name && <p className="form-error">{errors.name}</p>}
       </div>
 
@@ -64,20 +81,22 @@ export default function IngredientForm({ initialValues, onSubmit, onCancel }) {
         </div>
         <div className="form-field">
           <label htmlFor="unit">Unit</label>
-          <input id="unit" name="unit" list="unit-options" value={form.unit} onChange={handleChange} />
-          <datalist id="unit-options">
-            {COMMON_UNITS.map((unit) => (
-              <option key={unit} value={unit} />
-            ))}
-          </datalist>
+          <UnitInput id="unit" value={form.unit} units={unitOptions} onChange={(unit) => setField('unit', unit)} />
           {errors.unit && <p className="form-error">{errors.unit}</p>}
         </div>
       </div>
 
-      <div className="form-field">
-        <label htmlFor="expirationDate">Expiration date</label>
-        <input id="expirationDate" name="expirationDate" type="date" value={form.expirationDate} onChange={handleChange} />
-        {errors.expirationDate && <p className="form-error">{errors.expirationDate}</p>}
+      <div className="form-row">
+        <div className="form-field">
+          <label htmlFor="dateAdded">Date bought / added</label>
+          <input id="dateAdded" name="dateAdded" type="date" value={form.dateAdded} onChange={handleChange} />
+          {errors.dateAdded && <p className="form-error">{errors.dateAdded}</p>}
+        </div>
+        <div className="form-field">
+          <label htmlFor="expirationDate">Expiration date</label>
+          <input id="expirationDate" name="expirationDate" type="date" value={form.expirationDate} onChange={handleChange} />
+          {errors.expirationDate && <p className="form-error">{errors.expirationDate}</p>}
+        </div>
       </div>
 
       <fieldset className="form-field">
@@ -85,13 +104,7 @@ export default function IngredientForm({ initialValues, onSubmit, onCancel }) {
         <div className="segmented">
           {LOCATIONS.map((location) => (
             <label key={location} className={`segmented-option ${form.location === location ? 'active' : ''}`}>
-              <input
-                type="radio"
-                name="location"
-                value={location}
-                checked={form.location === location}
-                onChange={handleChange}
-              />
+              <input type="radio" name="location" value={location} checked={form.location === location} onChange={handleChange} />
               {location}
             </label>
           ))}

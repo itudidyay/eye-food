@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, CircleCheck, CircleX, CookingPot, Flame, Info } from 'lucide-react'
+import { ArrowLeft, CircleCheck, CircleX, CookingPot, Flame, Info, Trash2 } from 'lucide-react'
 import ExpirationBadge from './ExpirationBadge.jsx'
 import RecipeImage from './RecipeImage.jsx'
 import RecipeMeta from './RecipeMeta.jsx'
@@ -7,7 +7,7 @@ import { suggestDeduction } from '../utils/recommendation.js'
 
 // Full view of one recipe, shown inside a Modal.
 // `result` comes from scoreRecipe(), so we already know what's available or missing.
-export default function RecipeDetails({ result, onCook }) {
+export default function RecipeDetails({ result, onCook, onDelete }) {
   const { recipe, available, missing, finalScore, urgencyScore, matchPercent } = result
   const [isCooking, setIsCooking] = useState(false)
 
@@ -74,6 +74,11 @@ export default function RecipeDetails({ result, onCook }) {
       </section>
 
       <div className="sticky-actions">
+        {recipe.isCustom && onDelete && (
+          <button className="button button-ghost danger" onClick={() => onDelete(recipe)}>
+            <Trash2 size={16} /> Delete recipe
+          </button>
+        )}
         <button className="button button-primary button-large" onClick={() => setIsCooking(true)} disabled={available.length === 0}>
           <CookingPot size={18} />
           Mark as Cooked

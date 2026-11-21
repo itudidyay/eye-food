@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { ChefHat, Info, Search } from 'lucide-react'
+import { ChefHat, Info, Plus, Search } from 'lucide-react'
 import EmptyState from '../components/EmptyState.jsx'
 import RecipeCard from '../components/RecipeCard.jsx'
 import { SORT_OPTIONS } from '../utils/recommendation.js'
 
-export default function Recipes({ recommendations, totalRecipes, onSelectRecipe, onNavigate }) {
+export default function Recipes({ recommendations, totalRecipes, onSelectRecipe, onNavigate, onAddRecipe }) {
   const [sortBy, setSortBy] = useState('score')
   const [search, setSearch] = useState('')
 
@@ -22,6 +22,9 @@ export default function Recipes({ recommendations, totalRecipes, onSelectRecipe,
             {recommendations.length} of {totalRecipes} recipes use something you have. Ingredients close to expiring push a recipe up the list.
           </p>
         </div>
+        <button className="button button-primary" onClick={onAddRecipe}>
+          <Plus size={18} /> Add recipe
+        </button>
       </header>
 
       <details className="how-it-works">
