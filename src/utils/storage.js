@@ -2,6 +2,7 @@
 // never has to worry about JSON parsing or broken data.
 
 import { dateFromToday, parseDate } from './expiration.js'
+import { isStorablePhoto } from './photos.js'
 
 const STORAGE_KEY = 'fridgewise.inventory.v1'
 const RECIPES_KEY = 'fridgewise.customRecipes.v1'
@@ -43,7 +44,8 @@ export function sanitizeIngredient(raw) {
     price: Number.isFinite(price) && price > 0 ? price : 0,
     // Product details from a barcode scan. All optional.
     brand: typeof raw.brand === 'string' ? raw.brand.trim().slice(0, 100) : '',
-    imageUrl: typeof raw.imageUrl === 'string' && /^https:\/\//.test(raw.imageUrl.trim()) ? raw.imageUrl.trim() : '',
+    // A web link, or a photo the user uploaded (stored as a small JPEG data URL).
+    imageUrl: isStorablePhoto(raw.imageUrl) && raw.imageUrl.length < 700000 ? raw.imageUrl : '',
     barcode: typeof raw.barcode === 'string' && /^\d{8,14}$/.test(raw.barcode) ? raw.barcode : '',
   }
 }
