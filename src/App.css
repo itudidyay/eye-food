@@ -1109,3 +1109,74 @@ fieldset {
     max-height: 50vh;
   }
 }
+
+/* ---------- 10. Ingredient form: photo upload and barcode panel ---------- */
+.field-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.sub-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.photo-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.photo-upload {
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.photo-upload.is-busy {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.barcode-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--green-50);
+  border: 1px solid var(--green-100);
+}
+
+.barcode-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.barcode-mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.barcode-mode[aria-pressed='true'] {
+  background: var(--green-600);
+  color: #fff;
+}
+
+.form-actions .barcode-button {
+  margin-right: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
