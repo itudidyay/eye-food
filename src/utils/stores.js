@@ -15,7 +15,7 @@ const OVERPASS_SERVERS = [
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 const PHOTON_URL = 'https://photon.komoot.io/api/'
 const REQUEST_TIMEOUT_MS = 15000
-export const SEARCH_RADIUS_M = 3000
+export const SEARCH_RADIUS_M = 10000
 
 /** fetch() that gives up after REQUEST_TIMEOUT_MS instead of hanging forever. */
 async function fetchWithTimeout(url, options = {}) {
